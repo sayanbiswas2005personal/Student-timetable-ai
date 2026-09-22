@@ -35,8 +35,8 @@ def parse_roll_number(db: Session, roll_number: str):
         if not batch:
             return None
             
-        # Try to extract the specific student number at the end (e.g. 015 from 2023/015)
-        student_num_match = re.search(r'/0*(\d+)$', roll_upper)
+        # Try to extract the specific student number at the end (e.g. 015 from 2023/015, 2023015, or 2023 015)
+        student_num_match = re.search(r'[/\s\-]?0*(\d+)$', roll_upper)
         student_num = int(student_num_match.group(1)) if student_num_match else None
         
         # User specified rule: Section D has rolls 1 to 73

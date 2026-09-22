@@ -8,3 +8,5 @@ build/
 .DS_Store
 *.log
 timetable_data/
+.node/
+node.tar.gz
