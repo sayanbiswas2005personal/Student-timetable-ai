@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+sqlalchemy
+alembic
+psycopg2-binary
+pydantic
+pydantic-settings
+python-dotenv
+opencv-python
+pytesseract
+numpy
+google-genai
+python-multipart
+pytz
+pytest
+httpx
