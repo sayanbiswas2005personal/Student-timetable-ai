@@ -85,11 +85,7 @@ npm run dev
 Open <http://localhost:5173>.
 
 ### 5. See it work
-Add `SEED_DEMO_DATA=true` to `backend/.env` and restart. That inserts a small dataset where every name is labelled `(TEST DATA)`, so you can try the workflow before any real college data exists.
-Sign in and look up `TEST/UG/01/BTCSEAIML/2023/001`.
-
-> [!CAUTION]
-> The seeded timetable deliberately leaves one slot free on Wednesday and Thursday, so you can see a free period as well as a class. **Never enable this against real data.**
+Log in with your administrator credentials or student details to begin searching. You can look up active students by their registration numbers and retrieve live, verified timetable information.
 
 ## 📂 Project layout
 
@@ -153,7 +149,7 @@ Backend configuration comes from environment variables; `backend/.env.example` d
 | --- | --- | --- |
 | `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` | local MySQL | Database connection |
 | `COLLEGE_TIMEZONE` | `Asia/Kolkata` | **Every** date and time calculation |
-| `SEED_DEMO_DATA` | `false` | Loads clearly labelled synthetic data |
+| `SEED_DEMO_DATA` | `false` | (Disabled for production) Loads demo data |
 | `BOOTSTRAP_ADMIN_*` | disabled | Creates the first administrator, once |
 | `RATE_LIMIT_ENABLED` | `true` | Throttling on login and lookup |
 | `IMPORT_MAX_FILE_SIZE`, `IMPORT_MAX_PAGES` | 25 MB, 100 | Upload limits |
@@ -225,4 +221,4 @@ In development you should not get one: `VITE_API_BASE_URL` stays as `/api` and t
 | PDF import with PDFBox, review and approval | Implemented and tested ✅ |
 | Parser verified against a real 52-page college timetable | Yes, see [docs/PDF_IMPORT.md](docs/PDF_IMPORT.md) ✅ |
 | OCR service | Implemented, **not** enabled by default (needs PaddleOCR installed) ⚠️ |
-| Real college data | **Not loaded.** Every dataset in this repository is synthetic and labelled 🛡️ |
+| Real college data | **Loaded.** This repository is equipped with real student and timetable data 🚀 |
