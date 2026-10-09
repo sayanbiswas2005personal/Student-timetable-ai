@@ -1,16 +1,40 @@
-version: '3.8'
-
+# MySQL for local development.
+#
+# The application does not require Docker. If you already run MySQL locally, set DB_URL, DB_USERNAME
+# and DB_PASSWORD in backend/.env instead and skip this file entirely.
+#
+#   docker compose up -d
+#   docker compose logs -f mysql
+#   docker compose down          # stop, keep the data
+#   docker compose down -v       # stop and delete the data
+#
+# The password here is a local development default. Change it before using this anywhere else,
+# and never commit a real credential.
 services:
-  db:
-    image: postgres:15-alpine
+  mysql:
+    image: mysql:8.4
+    container_name: college-timetable-mysql
+    restart: unless-stopped
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+05:30
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: timetable_db
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-localrootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-college_timetable}
+      MYSQL_USER: ${MYSQL_USERNAME:-timetable_app}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-LocalDevOnly@123}
     ports:
-      - "5432:5432"
+      # 3306 on the host so a backend running on macOS can reach it without extra configuration.
+      - "${MYSQL_PORT:-3306}:3306"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${MYSQL_ROOT_PASSWORD:-localrootpassword}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
 
 volumes:
-  postgres_data:
+  mysql-data:

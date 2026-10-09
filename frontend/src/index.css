@@ -1,13 +1,81 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: #f3f4f6;
+/*
+ * Design notes
+ * ------------
+ * - One neutral surface ramp and a single accent colour. Status colours are reserved for
+ *   timetable status only, so a coloured card always means something about the schedule.
+ * - Focus rings are never removed; they are made visible with a ring so keyboard use is obvious.
+ * - Motion is limited to a 150ms colour transition. Nothing moves across the screen, which matters
+ *   when the app is used quickly on a phone in a corridor.
+ */
+@theme {
+  --color-brand-50: oklch(0.97 0.02 250);
+  --color-brand-100: oklch(0.93 0.04 250);
+  --color-brand-200: oklch(0.87 0.07 250);
+  --color-brand-500: oklch(0.58 0.15 255);
+  --color-brand-600: oklch(0.5 0.16 255);
+  --color-brand-700: oklch(0.43 0.15 255);
+  --color-brand-900: oklch(0.28 0.09 255);
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-slate-100 text-slate-900;
+  }
+
+  /* A single, consistent focus treatment for every interactive element. */
+  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-600;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5
+           text-sm font-semibold text-white transition-colors duration-150
+           hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-slate-300;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300
+           bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors duration-150
+           hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-red-300 bg-white
+           px-4 py-2.5 text-sm font-semibold text-red-700 transition-colors duration-150
+           hover:bg-red-50 disabled:cursor-not-allowed disabled:text-red-300;
+  }
+
+  .field-label {
+    @apply mb-1.5 block text-sm font-medium text-slate-700;
+  }
+
+  .field-input {
+    @apply block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base
+           text-slate-900 placeholder:text-slate-400
+           focus:border-brand-500 focus:ring-2 focus:ring-brand-100 focus:outline-none
+           disabled:bg-slate-50 disabled:text-slate-500;
+  }
+
+  .field-error {
+    @apply mt-1.5 flex items-start gap-1.5 text-sm text-red-700;
+  }
 }

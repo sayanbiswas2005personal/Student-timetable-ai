@@ -1,0 +1,24 @@
+# Optional OCR service. The timetable system works without it: the backend simply reports that a
+# page has no embedded text and asks a human to run OCR separately.
+#
+#   python3 -m venv .venv
+#   . .venv/bin/activate
+#   pip install -r requirements.txt
+#   uvicorn app.main:app --port 8081
+#
+# PaddleOCR is pinned to a 2.x release, which is the line the app.main module is written against.
+
+fastapi==0.118.0
+uvicorn[standard]==0.37.0
+pydantic==2.11.9
+
+# Rendering the PDF pages into images.
+pdf2image==1.17.0
+# Poppler is a system dependency: brew install poppler on macOS, apt install poppler-utils on Debian.
+pypdf==6.1.1
+
+# The OCR engine itself. Install it separately so a machine without it can still run everything
+# else:  pip install "paddleocr>=2.9" "paddlepaddle>=2.6"
+# PaddleOCR>=2.9,<3
+# paddlepaddle>=2.6
+numpy>=1.26,<3

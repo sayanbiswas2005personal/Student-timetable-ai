@@ -1,12 +1,51 @@
-venv/
+# Python
 __pycache__/
-*.pyc
-.env
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+
+# Node
 node_modules/
 dist/
-build/
-.DS_Store
+dist-ssr/
+*.local
+npm-debug.log*
+yarn-error.log*
+
+# Java / Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+
+# Runtime data
+# Uploaded PDFs and locally generated import data are never committed: they can contain
+# real student information.
+/backend/data/
+/backend/uploads/
 *.log
-timetable_data/
-.node/
-node.tar.gz
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+application-local.yml
+application-local.properties
+
+# IDEs
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.DS_Store
+Thumbs.db
+
+# Build output that should never be shared
+/frontend/coverage/

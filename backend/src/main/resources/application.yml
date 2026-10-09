@@ -1,0 +1,166 @@
+spring:
+  application:
+    name: college-timetable-backend
+
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/college_timetable?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Kolkata&characterEncoding=utf8}
+    username: ${DB_USERNAME:timetable_app}
+    password: ${DB_PASSWORD:}
+    hikari:
+      pool-name: timetable-pool
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+      connection-timeout: 10000
+      validation-timeout: 3000
+      initialization-fail-timeout: -1
+
+  jpa:
+    # The schema is owned by Flyway. Hibernate must never create or alter tables.
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+    # No hibernate.jdbc.time_zone here on purpose. It rebinds LocalTime as a UTC instant, which
+    # silently stores a 09:30 class as 04:00 in the column; the same shift is undone on read, so
+    # nothing in Java notices. Class times are wall clock and must never be converted.
+    properties:
+      hibernate:
+        format_sql: false
+    show-sql: false
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+  servlet:
+    multipart:
+      max-file-size: ${IMPORT_MAX_FILE_SIZE:25MB}
+      max-request-size: ${IMPORT_MAX_FILE_SIZE:25MB}
+
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+
+  threads:
+    virtual:
+      enabled: true
+
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    include-message: never
+    include-stacktrace: never
+    include-binding-errors: never
+  servlet:
+    session:
+      timeout: ${SESSION_TIMEOUT:8h}
+      cookie:
+        http-only: true
+        same-site: lax
+        # Set secure=true when the API is served over HTTPS.
+        secure: ${SESSION_COOKIE_SECURE:false}
+  tomcat:
+    max-swallow-size: -1
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
+
+college:
+  name: ${COLLEGE_NAME:College Timetable Lookup System}
+  # Every date/time calculation in the backend uses this zone.
+  timezone: ${COLLEGE_TIMEZONE:Asia/Kolkata}
+  seed-demo-data: ${SEED_DEMO_DATA:false}
+  bootstrap:
+    # Create the very first administrator. Disable once the account exists.
+    enabled: ${BOOTSTRAP_ADMIN_ENABLED:false}
+    username: ${BOOTSTRAP_ADMIN_USERNAME:}
+    password: ${BOOTSTRAP_ADMIN_PASSWORD:}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:}
+  search:
+    # Declared aliases only. A value here must already exist in the programs table.
+    program-aliases: {}
+  rate-limit:
+    enabled: ${RATE_LIMIT_ENABLED:true}
+    login-attempts: ${RATE_LIMIT_LOGIN_ATTEMPTS:10}
+    login-window: ${RATE_LIMIT_LOGIN_WINDOW:5m}
+    lookup-requests: ${RATE_LIMIT_LOOKUP_REQUESTS:240}
+    lookup-window: ${RATE_LIMIT_LOOKUP_WINDOW:1m}
+  import:
+    # Directory for uploaded PDFs. Overridden with IMPORT_DIR.
+    storage-dir: ${IMPORT_DIR:./data/imports}
+    # Bulk import of a whole document, one section per page. Off by default: the interactive
+    # PDF import is the normal route, and this exists for a college's published "section wise
+    # timetable" document. See docs/PDF_IMPORT.md.
+    bootstrap:
+      enabled: ${IMPORT_BOOTSTRAP_ENABLED:false}
+      # Source document, relative to the working directory or absolute.
+      source: ${IMPORT_BOOTSTRAP_SOURCE:./data/imports/Section wise Timetable V15.pdf}
+      academic-year: ${IMPORT_BOOTSTRAP_YEAR:2026-27}
+      # The document prints "w.e.f. 23/07/2026"; these dates must be confirmed by an
+      # administrator and replaced with the college's official term dates.
+      effective-from: ${IMPORT_BOOTSTRAP_FROM:2026-07-20}
+      effective-to: ${IMPORT_BOOTSTRAP_TO:2027-06-30}
+      publish: ${IMPORT_BOOTSTRAP_PUBLISH:true}
+      republish: ${IMPORT_BOOTSTRAP_REPUBLISH:false}
+    max-file-size: ${IMPORT_MAX_FILE_SIZE:25MB}
+    max-pages: ${IMPORT_MAX_PAGES:100}
+    min-chars-per-page: ${IMPORT_MIN_CHARS_PER_PAGE:40}
+    ocr:
+      enabled: ${OCR_ENABLED:false}
+      base-url: ${OCR_BASE_URL:http://localhost:8081}
+      timeout-seconds: ${OCR_TIMEOUT_SECONDS:120}
+
+logging:
+  level:
+    root: INFO
+    com.college.timetable: ${LOG_LEVEL:INFO}
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+
+---
+# ---------------------------------------------------------------------------
+# Test profile. Uses an in-memory H2 database in MySQL compatibility mode so
+# `mvn test` needs no external service. The same Flyway migrations run here as
+# in production, which is exactly why they avoid engine and charset clauses.
+# ---------------------------------------------------------------------------
+spring:
+  config:
+    activate:
+      on-profile: test
+  datasource:
+    url: jdbc:h2:mem:timetable_test_${random.uuid};MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: none
+  flyway:
+    locations: classpath:db/migration
+
+college:
+  seed-demo-data: true
+  rate-limit:
+    enabled: false
+
+logging:
+  level:
+    root: WARN
+    com.college.timetable: INFO
