@@ -1,123 +1,155 @@
-import { zodResolver } from '@hookform/resolvers/zod'
-import { CalendarClock } from 'lucide-react'
-import { useForm } from 'react-hook-form'
-import { useState } from 'react'
-import { Navigate, useLocation, useNavigate } from 'react-router-dom'
-import { z } from 'zod'
+import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { GraduationCap, Lock, Mail, AlertCircle, ArrowRight, CheckCircle2 } from 'lucide-react';
 
-import { ApiRequestError } from '../api/client'
-import { useAuth } from '../api/useAuth'
-import { Alert } from '../components/common/Alert'
-import { Button } from '../components/common/Button'
-import { Field } from '../components/common/Field'
+export const LoginPage: React.FC = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-const schema = z.object({
-  username: z.string().trim().min(1, 'Enter your username.').max(60),
-  password: z.string().min(1, 'Enter your password.').max(200),
-})
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-type Values = z.infer<typeof schema>
+  const from = (location.state as any)?.from?.pathname || '/';
 
-/**
- * Sign in.
- *
- * There is no registration link on purpose: accounts are created by an administrator, so a
- * password reset or self sign up flow would be a way for anyone to reach student data.
- */
-export default function LoginPage() {
-  const { login, status } = useAuth()
-  const navigate = useNavigate()
-  const location = useLocation()
-  const [error, setError] = useState<ApiRequestError | null>(null)
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { username: '', password: '' } })
-
-  if (status === 'authenticated') {
-    const from = (location.state as { from?: string } | null)?.from
-    return <Navigate to={from ?? '/'} replace />
-  }
-
-  const onSubmit = handleSubmit(async (values) => {
-    setError(null)
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
     try {
-      await login(values.username, values.password)
-      const from = (location.state as { from?: string } | null)?.from
-      navigate(from ?? '/', { replace: true })
-    } catch (cause) {
-      setError(cause as ApiRequestError)
+      const user = await login(email, password);
+      if (user.role === 'ADMIN' && from === '/') {
+        navigate('/');
+      } else {
+        navigate(from, { replace: true });
+      }
+    } catch (err: any) {
+      setError(err.message || 'Login failed. Please check your credentials.');
+    } finally {
+      setLoading(false);
     }
-  })
+  };
+
+  const fillCredentials = (demoEmail: string, demoPass: string) => {
+    setEmail(demoEmail);
+    setPassword(demoPass);
+    setError(null);
+  };
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-10">
-      <div className="w-full max-w-md">
-        <div className="mb-6 flex items-center justify-center gap-3">
-          <span
-            aria-hidden="true"
-            className="flex size-11 items-center justify-center rounded-xl bg-brand-600 text-white"
-          >
-            <CalendarClock className="size-6" />
-          </span>
-          <div>
-            <h1 className="text-lg font-semibold text-slate-900">College Timetable Lookup</h1>
-            <p className="text-sm text-slate-600">Staff and administrator sign in</p>
+    <div className="min-h-screen bg-slate-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="flex justify-center">
+          <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center shadow-xl shadow-blue-500/30">
+            <GraduationCap className="w-8 h-8 text-white" />
+          </div>
+        </div>
+        <h2 className="mt-4 text-center text-3xl font-extrabold text-navy-900 tracking-tight">
+          StudentAI<span className="text-blue-600">.com</span>
+        </h2>
+        <p className="mt-2 text-center text-sm text-slate-600">
+          Smart Campus Timetable & Student Verification System
+        </p>
+      </div>
+
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-8 px-6 shadow-xl shadow-slate-200/50 rounded-2xl border border-slate-200/80 sm:px-10">
+          {error && (
+            <div className="mb-5 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-start space-x-3">
+              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-red-500" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <form className="space-y-5" onSubmit={handleSubmit}>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700">Email Address</label>
+              <div className="mt-1 relative rounded-xl shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-slate-400" />
+                </div>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="faculty@studentai.com"
+                  className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700">Password</label>
+              <div className="mt-1 relative rounded-xl shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-slate-400" />
+                </div>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-xl shadow-md text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-all cursor-pointer"
+            >
+              {loading ? (
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Signing In...</span>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <span>Sign In</span>
+                  <ArrowRight className="w-4 h-4" />
+                </div>
+              )}
+            </button>
+          </form>
+
+          {/* Quick Demo Credentials */}
+          <div className="mt-6 pt-6 border-t border-slate-100">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3 text-center">
+              Quick Demo Access
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => fillCredentials('faculty@studentai.com', 'faculty123')}
+                className="p-2.5 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100/80 text-left transition-colors cursor-pointer group"
+              >
+                <div className="text-xs font-bold text-blue-900 group-hover:text-blue-700">Faculty Role</div>
+                <div className="text-[11px] text-blue-600 font-mono">faculty@studentai.com</div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => fillCredentials('admin@studentai.com', 'admin123')}
+                className="p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-left transition-colors cursor-pointer group"
+              >
+                <div className="text-xs font-bold text-slate-800 group-hover:text-slate-900">Admin Role</div>
+                <div className="text-[11px] text-slate-500 font-mono">admin@studentai.com</div>
+              </button>
+            </div>
           </div>
         </div>
 
-        <div className="card p-6">
-          <form noValidate onSubmit={onSubmit} className="space-y-4">
-            {error && (
-              <Alert tone="error" title="Could not sign in">
-                {error.message}
-                {error.isRateLimited && (
-                  <span className="mt-1 block">Wait a moment before trying again.</span>
-                )}
-              </Alert>
-            )}
-
-            <Field label="Username" error={errors.username?.message} required>
-              {({ id, describedBy, invalid }) => (
-                <input
-                  id={id}
-                  type="text"
-                  autoComplete="username"
-                  autoFocus
-                  aria-describedby={describedBy}
-                  aria-invalid={invalid}
-                  className="field-input"
-                  {...register('username')}
-                />
-              )}
-            </Field>
-
-            <Field label="Password" error={errors.password?.message} required>
-              {({ id, describedBy, invalid }) => (
-                <input
-                  id={id}
-                  type="password"
-                  autoComplete="current-password"
-                  aria-describedby={describedBy}
-                  aria-invalid={invalid}
-                  className="field-input"
-                  {...register('password')}
-                />
-              )}
-            </Field>
-
-            <Button type="submit" loading={isSubmitting} className="w-full">
-              Sign in
-            </Button>
-          </form>
-        </div>
-
-        <p className="mt-4 text-center text-xs text-slate-500">
-          Accounts are issued by the college. Contact an administrator if you cannot sign in.
+        <p className="mt-6 text-center text-xs text-slate-500">
+          Faculty Portal & Campus Timetable Verification &copy; 2026 StudentAI.com
         </p>
       </div>
     </div>
-  )
-}
+  );
+};
+
