@@ -164,6 +164,20 @@ cd ..
 
 ---
 
+## Deploying the Frontend to Vercel
+
+The Vercel project should deploy the Vite frontend as a static site:
+
+1. Import this repository into Vercel and set **Root Directory** to `frontend`.
+2. Use the Vite framework preset, build command `npm run build`, and output directory `dist`.
+3. Add `VITE_API_BASE_URL` in the Vercel project's environment variables, set to your deployed backend URL ending in `/api` (for example, `https://your-backend.example.com/api`), then redeploy.
+
+The frontend defaults to `/api` for local development. The backend is not hosted by this frontend deployment: deploy it separately, configure it to use a persistent PostgreSQL database and file storage, and allow requests from your Vercel domain. SQLite files and local uploads are not persistent on serverless hosts.
+
+`frontend/vercel.json` sends client-side routes back to `index.html`, so refreshing routes such as `/login` works on Vercel.
+
+---
+
 ## Running the Application
 
 ### Option A: Unified Full-Stack Server (Recommended)
@@ -241,4 +255,3 @@ PYTHONPATH=. pytest -v backend/tests
 When the backend is running, interactive Swagger API documentation is available at:
 - **Swagger UI**: [http://localhost:8000/docs](http://localhost:8000/docs)
 - **ReDoc**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
-
