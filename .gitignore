@@ -55,3 +55,4 @@ Thumbs.db
 storage/timetables/*
 !storage/timetables/.gitkeep
 
+.neon

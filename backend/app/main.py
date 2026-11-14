@@ -24,6 +24,17 @@ logging.basicConfig(
 )
 logger = logging.getLogger("studentai")
 
+allowed_origins = (
+    ["*"]
+    if settings.ALLOWED_ORIGINS == "*"
+    else [
+        origin.strip()
+        for origin in settings.ALLOWED_ORIGINS.split(",")
+        if origin.strip()
+    ]
+)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}...")
@@ -35,6 +46,7 @@ async def lifespan(app: FastAPI):
     yield
     logger.info("Shutting down StudentAI.com...")
 
+
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
@@ -45,7 +57,7 @@ app = FastAPI(
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

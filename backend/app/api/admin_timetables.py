@@ -144,59 +144,76 @@ def extract_timetable(
     if not timetable:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Timetable not found.")
 
-    timetable.processing_status = ProcessingStatus.PROCESSING
-    db.commit()
-
-    # Call extractor
-    extraction_res = extract_timetable_data(
-        pdf_path=timetable.file_path,
-        provider=provider,
-        page_limit=page_limit
-    )
-
-    if not extraction_res.success or not extraction_res.data:
-        timetable.processing_status = ProcessingStatus.ERROR
-        timetable.processing_error = extraction_res.error or "Extraction failed."
+    try:
+        timetable.processing_status = ProcessingStatus.PROCESSING
+        timetable.processing_error = None
         db.commit()
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Extraction failed: {timetable.processing_error}"
+
+        # Call extractor
+        extraction_res = extract_timetable_data(
+            pdf_path=timetable.file_path,
+            provider=provider,
+            page_limit=page_limit
         )
 
-    # Validate extracted data
-    val_res = validate_and_normalize_timetable_json(extraction_res.data)
+        if not extraction_res.success or not extraction_res.data:
+            timetable.processing_status = ProcessingStatus.ERROR
+            timetable.processing_error = extraction_res.error or "Extraction failed."
+            db.commit()
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Extraction failed: {timetable.processing_error}"
+            )
 
-    timetable.extracted_json = json.dumps(val_res.normalized_data)
-    timetable.extraction_provider = extraction_res.provider
-    timetable.processing_status = ProcessingStatus.EXTRACTED
-    timetable.processing_error = None
-    if val_res.normalized_data.get("academic_year"):
-        timetable.academic_year = val_res.normalized_data["academic_year"]
-    if val_res.normalized_data.get("institution"):
-        timetable.institution = val_res.normalized_data["institution"]
+        # Validate extracted data
+        val_res = validate_and_normalize_timetable_json(extraction_res.data)
 
-    db.commit()
-    db.refresh(timetable)
+        timetable.extracted_json = json.dumps(val_res.normalized_data)
+        timetable.extraction_provider = extraction_res.provider
+        timetable.processing_status = ProcessingStatus.EXTRACTED
+        timetable.processing_error = None
+        if val_res.normalized_data.get("academic_year"):
+            timetable.academic_year = val_res.normalized_data["academic_year"]
+        if val_res.normalized_data.get("institution"):
+            timetable.institution = val_res.normalized_data["institution"]
 
-    # Audit log
-    audit = AuditLog(
-        user_id=current_user.id,
-        user_email=current_user.email,
-        action="EXTRACT_TIMETABLE",
-        details=f"Extracted {len(val_res.normalized_data.get('entries', []))} entries using {extraction_res.provider}."
-    )
-    db.add(audit)
-    db.commit()
+        db.commit()
+        db.refresh(timetable)
 
-    return {
-        "id": timetable.id,
-        "processing_status": timetable.processing_status.value,
-        "extraction_provider": timetable.extraction_provider,
-        "total_entries": len(val_res.normalized_data.get("entries", [])),
-        "validation_errors": val_res.errors,
-        "validation_warnings": val_res.warnings,
-        "message": f"Successfully extracted {len(val_res.normalized_data.get('entries', []))} entries."
-    }
+        # Audit log
+        audit = AuditLog(
+            user_id=current_user.id,
+            user_email=current_user.email,
+            action="EXTRACT_TIMETABLE",
+            details=f"Extracted {len(val_res.normalized_data.get('entries', []))} entries using {extraction_res.provider}."
+        )
+        db.add(audit)
+        db.commit()
+
+        return {
+            "id": timetable.id,
+            "processing_status": timetable.processing_status.value,
+            "extraction_provider": timetable.extraction_provider,
+            "total_entries": len(val_res.normalized_data.get("entries", [])),
+            "validation_errors": val_res.errors,
+            "validation_warnings": val_res.warnings,
+            "message": f"Successfully extracted {len(val_res.normalized_data.get('entries', []))} entries."
+        }
+    except HTTPException:
+        db.rollback()
+        timetable.processing_status = ProcessingStatus.ERROR
+        timetable.processing_error = timetable.processing_error or "Extraction failed."
+        db.commit()
+        raise
+    except Exception as exc:
+        db.rollback()
+        timetable.processing_status = ProcessingStatus.ERROR
+        timetable.processing_error = str(exc) or "Unexpected extraction failure."
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Extraction failed: {timetable.processing_error}"
+        ) from exc
 
 @router.get("/{id}/preview", response_model=TimetablePreviewResponse)
 def get_timetable_preview(

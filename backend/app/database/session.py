@@ -1,19 +1,17 @@
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import declarative_base, sessionmaker
-from backend.app.core.config import settings
+from backend.app.core.config import normalize_database_url, settings
 
-connect_args = {}
-if settings.DATABASE_URL.startswith("sqlite"):
-    connect_args["check_same_thread"] = False
+database_url = normalize_database_url(settings.DATABASE_URL)
 
-engine = create_engine(
-    settings.DATABASE_URL,
-    connect_args=connect_args,
-    pool_pre_ping=True
-)
+engine_options = {"pool_pre_ping": True}
+if database_url.startswith("sqlite"):
+    engine_options["connect_args"] = {"check_same_thread": False}
 
-# Enable foreign keys for SQLite
-if settings.DATABASE_URL.startswith("sqlite"):
+engine = create_engine(database_url, **engine_options)
+
+# Enable foreign keys for SQLite only
+if database_url.startswith("sqlite"):
     @event.listens_for(engine, "connect")
     def set_sqlite_pragma(dbapi_connection, connection_record):
         cursor = dbapi_connection.cursor()
@@ -22,6 +20,7 @@ if settings.DATABASE_URL.startswith("sqlite"):
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
+
 
 def get_db():
     """FastAPI dependency that yields a scoped SQLAlchemy database session."""
